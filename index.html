@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Detector de Tonalidade de Pele</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #FDF6F0, #FEECEC);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #4B2E2E;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+      color: #D72638;
+    }
+
+    video, canvas {
+      width: 320px;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 25px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 25px;
+      background-color: #D72638;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #a81e2c;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    strong {
+      color: #D72638;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Descubra sua Tonalidade</h1>
+  <video id="video" autoplay></video><br>
+  <button id="snap">Capturar</button>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <div id="resultado"></div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultado = document.getElementById('resultado');
+
+    // Abrir câmera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Permita acesso à câmera para usar o site."));
+
+    // Tirar foto e analisar cor média
+    document.getElementById('snap').addEventListener('click', () => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      // Pega pixels do centro
+      const x = canvas.width / 2 - 25;
+      const y = canvas.height / 2 - 25;
+      const imageData = ctx.getImageData(x, y, 50, 50);
+      let r = 0, g = 0, b = 0;
+      const total = imageData.data.length / 4;
+
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        r += imageData.data[i];
+        g += imageData.data[i + 1];
+        b += imageData.data[i + 2];
+      }
+
+      r = Math.round(r / total);
+      g = Math.round(g / total);
+      b = Math.round(b / total);
+
+      // Identificação do subtom (bem básica)
+      let subtom = '';
+      if (r > g && r > b) {
+        subtom = 'Quente 🔥';
+      } else if (b > r && b > g) {
+        subtom = 'Frio ❄️';
+      } else {
+        subtom = 'Neutro ⚖️';
+      }
+
+      resultado.innerHTML = `
+        <h2>Resultado</h2>
+        <p><strong>Cor média:</strong> RGB(${r}, ${g}, ${b})</p>
+        <p><strong>Subtom detectado:</strong> ${subtom}</p>
+        <p><strong>Dica de maquiagem:</strong><br>
+        ${subtom.includes("Quente") ? "Use tons dourados, pêssego ou bronze." : subtom.includes("Frio") ? "Aposte em rosa, vinho ou azul frio." : "Você pode usar tons frios e quentes!"}
+        </p>
+      `;
+    });
+  </script>
+</body>
+</html>
